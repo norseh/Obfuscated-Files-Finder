@@ -69,6 +69,7 @@ while read line; do
   CHARS=$(cat $line | wc -c | awk '{print $1}')
   LINES=$(cat $line | wc -l | awk '{print $1}')
   LINES_WO_BLANK=$(echo "$LINES - $LINES_W_SPACE_CHAR" | bc)
+  MIMETYPE=$(file $line | awk -F ": " '{print $2}')
   ((ITER++))
   if [ $DEBUG ]; then echo "Analyzing file $ITER of $NUM_FILES : $REAL_PATH"; fi
 
@@ -80,13 +81,13 @@ while read line; do
 
   # Alerting the score of suspicious files
   if ([ "$SCORE" -ge "7" ] && [ "$SCORE2" -gt "75" ] && [ "$SCORE3" -gt "100" ]); then
-    echo -e "$(tput setab 0)$(tput setaf 1)$(tput bold)[VERY SUSPICIOUS]$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH" >> $VERY_SUSPICIOUS_LIST
-    echo -e "$(tput setab 0)$(tput setaf 1)$(tput bold)VERY Suspicious File Detected:$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH"
-    echo "$TIMESTAMPFILE - VERY Suspicious File Detected: $SCORE3 - $SCORE2 - $SCORE - $REAL_PATH" >> $LOGFILE || echo "$TIMESTAMPFILE - VERY Suspicious File Detected: $SCORE2 - $SCORE - $REAL_PATH" >> $LOGFILE_LOCAL
+    echo -e "$(tput setab 0)$(tput setaf 1)$(tput bold)[VERY SUSPICIOUS]$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH - $MIMETYPE" >> $VERY_SUSPICIOUS_LIST
+    echo -e "$(tput setab 0)$(tput setaf 1)$(tput bold)VERY Suspicious File Detected:$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH - $MIMETYPE"
+    echo "$TIMESTAMPFILE - VERY Suspicious File Detected: $SCORE3 - $SCORE2 - $SCORE - $REAL_PATH" >> $LOGFILE || echo "$TIMESTAMPFILE - VERY Suspicious File Detected: $SCORE2 - $SCORE - $REAL_PATH - $MIMETYPE" >> $LOGFILE_LOCAL
   elif ([ "$SCORE" -ge "7" ] || [ "$SCORE2" -gt "75" ] || [ "$SCORE3" -gt "100" ]); then
-    echo -e "$(tput setab 0)$(tput setaf 3)$(tput bold)[SUSPICIOUS]$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH" >> $SUSPICIOUS_LIST
-    if [ $DEBUG ]; then echo -e "$(tput setab 0)$(tput setaf 3)$(tput bold)Suspicious File Detected:$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH"; fi
-    echo "$TIMESTAMPFILE - Suspicious File Detected: $SCORE3 - $SCORE2 - $SCORE - $REAL_PATH" >> $LOGFILE || echo "$TIMESTAMPFILE - Suspicious File Detected: $SCORE2 - $SCORE - $REAL_PATH" >> $LOGFILE_LOCAL
+    echo -e "$(tput setab 0)$(tput setaf 3)$(tput bold)[SUSPICIOUS]$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH - $MIMETYPE" >> $SUSPICIOUS_LIST
+    if [ $DEBUG ]; then echo -e "$(tput setab 0)$(tput setaf 3)$(tput bold)Suspicious File Detected:$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH - $MIMETYPE"; fi
+    echo "$TIMESTAMPFILE - Suspicious File Detected: $SCORE3 - $SCORE2 - $SCORE - $REAL_PATH" >> $LOGFILE || echo "$TIMESTAMPFILE - Suspicious File Detected: $SCORE2 - $SCORE - $REAL_PATH - $MIMETYPE" >> $LOGFILE_LOCAL
   fi
 #done | pv -s $(wc -l "$TEMP_FILE") - < $TEMP_FILE
 done < $TEMP_FILE
@@ -106,4 +107,3 @@ echo "[TOTAL SUSPECTED FILES]: $NUM_TOTAL_SUSPECTED_FILES"
 echo ""
 echo "A report was saved by priority in: " $(realpath $SUSPECTED_FILES)
 if ([ "$EMAIL" != "" ] && [ -e "$SUSPECTED_FILES" ]); then mutt -s "Obfuscated Files Finder Report" $EMAIL < $SUSPECTED_FILES && echo "Mail message sent with report to $EMAIL"; fi
-
