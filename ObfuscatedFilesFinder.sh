@@ -129,6 +129,43 @@ echo ""
 echo "A report was saved by priority in: " $($FULLPATHCOMMAND $SUSPECTED_FILES)
 if ([ "$EMAIL" != "" ] && [ -e "$SUSPECTED_FILES" ]); then mutt -s "Obfuscated Files Finder Report" $EMAIL < $SUSPECTED_FILES && echo "Mail message sent with report to $EMAIL"; fi
 
+# Searching for logfiles with access in the suspected files
+if [ $DEBUG ] ; then echo "Searching for logfiles with access in the suspected files"; fi
+read -r -p "Do you want to inspect /var/log files for access in suspected files? [Y/n]" response1
+#response=${response,,} # tolower
+if [[ $response1 =~ ^(yes|y|Y| ) ]] || [[ -z $response1 ]]; then
+  echo "$response1 AAA"
+  EGREPPARAMS1=$(cat "$ALL_SUSPICIOUS" | rev | cut -d "/" -f 1 | rev | uniq -u | grep -iv index | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\|/g')
+  if [ $DEBUG ] ; then echo "$EGREPPARAMS1"; fi
+  read -r -p "Type the location of log files [/var/log]" response2
+  echo "$response2 BBB"
+  #response=${response,,} # tolower
+  if [[ $response2 =~ ^( ) ]] || [[ -z $response2 ]]; then
+    VARLOG="/var/log"
+    echo "$VARLOG 1"
+    egrep -ir "$EGREPPARAMS1" "$VARLOG" | grep -iv "/var/log/obfuscated_files.log" | tee "$LOGPATH/Suspected_Logs.txt"
+  else
+    if [ -d "$response2" ]; then
+      VARLOG="$response2"
+      echo "$VARLOG 2"
+      egrep -ir "$EGREPPARAMS1" "$VARLOG" | grep -iv "/var/log/obfuscated_files.log" | tee "$LOGPATH/Suspected_Logs.txt"
+    else
+      echo "Invalid directory"
+    fi
+  fi
+fi
+
+## Searching for Suspected IPs with access in Suspected Files
+#if [ $DEBUG ] ; then echo "Searching for Suspected IPs with access in Suspected Files"; fi
+#read -r -p "Do you want to inspect /var/log files for access became via Suspected IPs in other files? [Y/n]" response3
+#if [[ $response3 =~ ^(yes|y|Y| ) ]] || [[ -z $response3 ]]; then
+#  echo "$response3 CCC"
+#  EGREPPARAMS3=$(cat "$LOGPATH/Suspected_Logs.txt" | rev | cut -d "/" -f 1 | rev | uniq -u | grep -iv index | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\|/g')
+#  if [ $DEBUG ] ; then echo "$EGREPPARAMS3"; fi
+#  grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' "$LOGPATH/Suspected_Logs.txt" | sort | uniq >> "$LOGPATH/Suspected_IPs.txt"  EGREPPARAMS2=$(cat "$LOGPATH/Suspected_IPs.txt" | rev | cut -d "/" -f 1 | rev | uniq -u | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\|/g')
+#  egrep -ir "$EGREPPARAMS3" "$VARLOG" | tee "$LOGPATH/Suspected_Logs_by_IP.txt"
+#fi
+
 # Saving files into the log folder
 if [ $DEBUG ] ; then echo "Saving files into the log folder"; fi
 if [ "$DISTRO" = "Mac" ]; then
@@ -147,24 +184,5 @@ fi
 if [ $DEBUG ] ; then echo "Compressing logfiles in a .tar.gz file"; fi
 tar -czpf $LOGPATH.tar.gz $LOGPATH/*
 
-# Searching for logfiles with access in the suspected files
-if [ $DEBUG ] ; then echo "Searching for logfiles with access in the suspected files"; fi
-read -r -p "Do you want to inspect /var/log files for access in suspected files? [Y/n]" response
- response=${response,,} # tolower
- if [[ $response =~ ^(yes|y|Y| ) ]] || [[ -z $response ]]; then
-    EGREPPARAMS=$(cat "$ALL_SUSPICIOUS" | rev | cut -d "/" -f 1 | rev | uniq -u | grep -iv index | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\|/g')
-    read -r -p "Type the location of log files [/var/log]" response
-    response=${response,,} # tolower
-    if [[ $response =~ ^( ) ]] || [[ -z $response ]]; then
-      VARLOG="/var/log"
-    else
-      if [ -d "$response" ]; then
-        VARLOG="$response"
-        egrep -ir "$EGREPPARAMS" "$VARLOG" | tee "$LOGPATH/Suspected_Logs.txt"
-      else
-        echo "Invalid directory"
-      fi
-    fi
- fi
 
 if [ $DEBUG ] ; then echo "End !!!"; fi
