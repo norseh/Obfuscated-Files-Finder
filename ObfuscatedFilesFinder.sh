@@ -48,6 +48,7 @@ mkdir "$TIMESTAMPLOG"
 LOGPATH="$TIMESTAMPLOG"
 touch "$TIMESTAMPLOG""/stats.txt"
 STATSLOG="$TIMESTAMPLOG""/stats.txt"
+if [ "$(uname)" = "Darwin" ]; then DISTRO="Mac"; else DISTRO="Linux"; fi
 
 # Testing command for full path of analysed files
 BINFULLPATH=$(realpath /usr)
@@ -104,15 +105,12 @@ while read line; do
 #done | pv -s $(wc -l "$TEMP_FILE") - < $TEMP_FILE
 done < $TEMP_FILE
 
-# Collecting Suspicious
+# Collecting Suspicious files
+if [ $DEBUG ] ; then echo "Collecting Suspicious files"; fi
 while read line; do
-  stat $line >> "$STATSLOG"
-  DIRECTORY=$(dirname $line)
-  mkdir -p $DIRECTORY
-  cp -a $line $DIRECTORY
+  stat "$line" >> "$STATSLOG"
+  if [ "$DISTRO" = "Mac" ]; then rsync -R "$line" "$LOGPATH"; else cp -a --parents "$line" "$LOGPATH"; fi
 done < $ALL_SUSPICIOUS
-cp -a $SUSPECTED_FILES $LOGPATH
-$(tar -czvpf $LOGPATH.tar.gz $LOGPATH/*)
 
 # Ordering suspected files to be treated in sequence (more suspected firstly)
 if [ -e "$VERY_SUSPICIOUS_LIST" ]; then $(cat "$VERY_SUSPICIOUS_LIST" | sort -k 2 -r -n >> "$SUSPECTED_FILES"); fi
@@ -129,3 +127,25 @@ echo "[TOTAL SUSPECTED FILES]: $NUM_TOTAL_SUSPECTED_FILES"
 echo ""
 echo "A report was saved by priority in: " $($FULLPATHCOMMAND $SUSPECTED_FILES)
 if ([ "$EMAIL" != "" ] && [ -e "$SUSPECTED_FILES" ]); then mutt -s "Obfuscated Files Finder Report" $EMAIL < $SUSPECTED_FILES && echo "Mail message sent with report to $EMAIL"; fi
+
+# Saving files into the log folder
+if [ $DEBUG ] ; then echo "Saving files into the log folder"; fi
+if [ "$DISTRO" = "Mac" ]; then
+  rsync -R "$SUSPECTED_FILES" "$LOGPATH";
+  mv "$ALL_SUSPICIOUS" "$LOGPATH";
+  mv "$SUSPICIOUS_LIST" "$LOGPATH";
+  mv "$TEMP_FILE" "$LOGPATH";
+else
+  cp -a --parents "$SUSPECTED_FILES" "$LOGPATH";
+  mv "$ALL_SUSPICIOUS" "$LOGPATH";
+  mv "$SUSPICIOUS_LIST" "$LOGPATH";
+  mv "$TEMP_FILE" "$LOGPATH";
+fi
+
+if [ $DEBUG ] ; then echo "aquiii"; fi
+
+# Compressing logfiles in a .tar.gz file
+if [ $DEBUG ] ; then echo "Compressing logfiles in a .tar.gz file"; fi
+tar -czpf $LOGPATH.tar.gz $LOGPATH/*
+
+if [ $DEBUG ] ; then echo "End !!!"; fi
