@@ -51,7 +51,7 @@ STATSLOG="$TIMESTAMPLOG""/stats.txt"
 if [ "$(uname)" = "Darwin" ]; then DISTRO="Mac"; else DISTRO="Linux"; fi
 
 # Testing command for full path of analysed files
-BINFULLPATH=$(realpath /usr)
+BINFULLPATH=$(realpath /usr) > /dev/null 2>&1
 if [ "$BINFULLPATH" = "/usr" ] ; then FULLPATHCOMMAND="realpath"; else FULLPATHCOMMAND="readlink -f"; fi
 
 # Creating logfile
@@ -141,8 +141,6 @@ else
   mv "$SUSPICIOUS_LIST" "$LOGPATH";
   mv "$TEMP_FILE" "$LOGPATH";
 fi
-
-if [ $DEBUG ] ; then echo "aquiii"; fi
 
 # Compressing logfiles in a .tar.gz file
 if [ $DEBUG ] ; then echo "Compressing logfiles in a .tar.gz file"; fi
