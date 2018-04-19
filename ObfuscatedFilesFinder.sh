@@ -47,7 +47,7 @@ LOGFILE_LOCAL="obfuscated_files.log"
 mkdir "$TIMESTAMPLOG"
 LOGPATH="$TIMESTAMPLOG"
 touch "$TIMESTAMPLOG""/stats.txt"
-STATSLOG="./$LOGPATH/stats.txt"
+STATSLOG="$TIMESTAMPLOG""/stats.txt"
 
 # Testing command for full path of analysed files
 BINFULLPATH=$(realpath /usr)
