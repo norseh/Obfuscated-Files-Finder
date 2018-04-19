@@ -40,9 +40,14 @@ TIMESTAMPLOG=$(date "+%Y-%m-%d_%H-%M-%S")
 TEMP_FILE=templist.txt
 SUSPICIOUS_LIST=suspicious.txt
 VERY_SUSPICIOUS_LIST=very_suspicious.txt
+ALL_SUSPICIOUS=all_suspicious.txt
 SUSPECTED_FILES=$(echo "$TIMESTAMPLOG""_Suspected_Files.txt")
 LOGFILE="/var/log/obfuscated_files.log"
 LOGFILE_LOCAL="obfuscated_files.log"
+mkdir "$TIMESTAMPLOG"
+LOGPATH="$TIMESTAMPLOG"
+touch "$TIMESTAMPLOG""/stats.txt"
+STATSLOG="./$LOGPATH/stats.txt"
 
 # Testing command for full path of analysed files
 BINFULLPATH=$(realpath /usr)
@@ -89,13 +94,25 @@ while read line; do
     echo -e "$(tput setab 0)$(tput setaf 1)$(tput bold)[VERY SUSPICIOUS]$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH - $MIMETYPE" >> $VERY_SUSPICIOUS_LIST
     echo -e "$(tput setab 0)$(tput setaf 1)$(tput bold)VERY Suspicious File Detected:$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH - $MIMETYPE"
     echo "$TIMESTAMPFILE - VERY Suspicious File Detected: $SCORE3 - $SCORE2 - $SCORE - $REAL_PATH" >> $LOGFILE || echo "$TIMESTAMPFILE - VERY Suspicious File Detected: $SCORE2 - $SCORE - $REAL_PATH - $MIMETYPE" >> $LOGFILE_LOCAL
+    echo "$REAL_PATH" >> $ALL_SUSPICIOUS
   elif ([ "$SCORE" -ge "7" ] || [ "$SCORE2" -gt "75" ] || [ "$SCORE3" -gt "100" ]); then
     echo -e "$(tput setab 0)$(tput setaf 3)$(tput bold)[SUSPICIOUS]$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH - $MIMETYPE" >> $SUSPICIOUS_LIST
     if [ $DEBUG ]; then echo -e "$(tput setab 0)$(tput setaf 3)$(tput bold)Suspicious File Detected:$(tput sgr0) $SCORE3 - $SCORE2 - $SCORE - $TIMESTAMPFILE - $REAL_PATH - $MIMETYPE"; fi
     echo "$TIMESTAMPFILE - Suspicious File Detected: $SCORE3 - $SCORE2 - $SCORE - $REAL_PATH" >> $LOGFILE || echo "$TIMESTAMPFILE - Suspicious File Detected: $SCORE2 - $SCORE - $REAL_PATH - $MIMETYPE" >> $LOGFILE_LOCAL
+    echo "$REAL_PATH" >> $ALL_SUSPICIOUS
   fi
 #done | pv -s $(wc -l "$TEMP_FILE") - < $TEMP_FILE
 done < $TEMP_FILE
+
+# Collecting Suspicious
+while read line; do
+  stat $line >> "$STATSLOG"
+  DIRECTORY=$(dirname $line)
+  mkdir -p $DIRECTORY
+  cp -a $line $DIRECTORY
+done < $ALL_SUSPICICIOUS
+cp -a $SUSPECTED_FILES $LOGPATH
+$(tar -czvpf $LOGPATH.tar.gz $LOGPATH/*)
 
 # Ordering suspected files to be treated in sequence (more suspected firstly)
 if [ -e "$VERY_SUSPICIOUS_LIST" ]; then $(cat "$VERY_SUSPICIOUS_LIST" | sort -k 2 -r -n >> "$SUSPECTED_FILES"); fi
