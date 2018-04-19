@@ -44,6 +44,10 @@ SUSPECTED_FILES=$(echo "$TIMESTAMPLOG""_Suspected_Files.txt")
 LOGFILE="/var/log/obfuscated_files.log"
 LOGFILE_LOCAL="obfuscated_files.log"
 
+# Testing command for full path of analysed files
+BINFULLPATH=$(realpath /usr)
+if [ "$BINFULLPATH" = "/usr" ] ; then FULLPATHCOMMAND="realpath"; else FULLPATHCOMMAND="readlink -f"; fi
+
 # Creating logfile
 if [ -f "$LOGFILE" ]; then touch "$LOGFILE"; fi
 
@@ -63,7 +67,8 @@ ITER=0
 while read line; do
   #echo -n X
   TIMESTAMPFILE=$(date "+%Y-%m-%d %H:%M:%S")
-  REAL_PATH=$(realpath $line)
+  
+  REAL_PATH=$($FULLPATHCOMMAND $line)
   LINES_W_SPACE_CHAR=$(fgrep -e " " $line | wc -l | awk '{print $1}')
   SPACE_CHARS=$(fgrep -o " " $line | wc -l | awk '{print $1}')
   CHARS=$(cat $line | wc -c | awk '{print $1}')
@@ -105,5 +110,5 @@ echo -e "$(tput setab 0)$(tput setaf 1)$(tput bold)[VERY SUSPICIOUS]$(tput sgr0)
 echo -e "$(tput setab 0)$(tput setaf 3)$(tput bold)[SUSPICIOUS]$(tput sgr0): $NUM_SUSPECTED_FILES"
 echo "[TOTAL SUSPECTED FILES]: $NUM_TOTAL_SUSPECTED_FILES"
 echo ""
-echo "A report was saved by priority in: " $(realpath $SUSPECTED_FILES)
+echo "A report was saved by priority in: " $($FULLPATHCOMMAND $SUSPECTED_FILES)
 if ([ "$EMAIL" != "" ] && [ -e "$SUSPECTED_FILES" ]); then mutt -s "Obfuscated Files Finder Report" $EMAIL < $SUSPECTED_FILES && echo "Mail message sent with report to $EMAIL"; fi
