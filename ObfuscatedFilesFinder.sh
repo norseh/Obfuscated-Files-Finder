@@ -110,7 +110,7 @@ while read line; do
   DIRECTORY=$(dirname $line)
   mkdir -p $DIRECTORY
   cp -a $line $DIRECTORY
-done < $ALL_SUSPICICIOUS
+done < $ALL_SUSPICIOUS
 cp -a $SUSPECTED_FILES $LOGPATH
 $(tar -czvpf $LOGPATH.tar.gz $LOGPATH/*)
 
