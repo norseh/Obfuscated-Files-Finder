@@ -49,6 +49,7 @@ LOGPATH="$TIMESTAMPLOG"
 touch "$TIMESTAMPLOG""/stats.txt"
 STATSLOG="$TIMESTAMPLOG""/stats.txt"
 if [ "$(uname)" = "Darwin" ]; then DISTRO="Mac"; else DISTRO="Linux"; fi
+FINDINLOGS="find_in_logs.txt"
 
 # Testing command for full path of analysed files
 BINFULLPATH=$(realpath /usr) > /dev/null 2>&1
@@ -145,5 +146,25 @@ fi
 # Compressing logfiles in a .tar.gz file
 if [ $DEBUG ] ; then echo "Compressing logfiles in a .tar.gz file"; fi
 tar -czpf $LOGPATH.tar.gz $LOGPATH/*
+
+# Searching for logfiles with access in the suspected files
+if [ $DEBUG ] ; then echo "Searching for logfiles with access in the suspected files"; fi
+read -r -p "Do you want to inspect /var/log files for access in suspected files? [Y/n]" response
+ response=${response,,} # tolower
+ if [[ $response =~ ^(yes|y|Y| ) ]] || [[ -z $response ]]; then
+    EGREPPARAMS=$(cat "$ALL_SUSPICIOUS" | rev | cut -d "/" -f 1 | rev | uniq -u | grep -iv index | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\|/g')
+    read -r -p "Type the location of log files [/var/log]" response
+    response=${response,,} # tolower
+    if [[ $response =~ ^( ) ]] || [[ -z $response ]]; then
+      VARLOG="/var/log"
+    else
+      if [ -d "$response" ]; then
+        VARLOG="$response"
+        egrep -ir "$EGREPPARAMS" "$VARLOG" | tee "$LOGPATH/Suspected_Logs.txt"
+      else
+        echo "Invalid directory"
+      fi
+    fi
+ fi
 
 if [ $DEBUG ] ; then echo "End !!!"; fi
